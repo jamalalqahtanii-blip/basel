@@ -361,6 +361,8 @@ const handleAdd = async (e: Event) => {
     }
     
     await cart.add(cartData)
+    // Refresh cart to update counts and totals
+    await cart.list()
     emit('add', props.product)
     showSuccess('تم إضافة المنتج للسلة بنجاح!')
     console.log('✅ تم إضافة المنتج للسلة بنجاح')
@@ -377,6 +379,8 @@ const inc = async (e: Event) => {
     const currentQty = qty.value
     const newQty = currentQty + 1
     await cart.updateByProduct(props.product, newQty)
+    // Refresh cart to update counts and totals
+    await cart.list()
     emit('update', { product: props.product, qty: newQty })
     showSuccess(`تم تحديث الكمية إلى ${newQty}`)
     console.log('تم تحديث الكمية:', newQty)
@@ -394,11 +398,15 @@ const dec = async (e: Event) => {
     if (currentQty > 1) {
       const newQty = currentQty - 1
       await cart.updateByProduct(props.product, newQty)
+      // Refresh cart to update counts and totals
+      await cart.list()
       emit('update', { product: props.product, qty: newQty })
       showSuccess(`تم تحديث الكمية إلى ${newQty}`)
       console.log('تم تحديث الكمية:', newQty)
     } else if (currentQty === 1) {
       await cart.removeByProduct(props.product)
+      // Refresh cart to update counts and totals
+      await cart.list()
       emit('remove', props.product)
       showSuccess('تم إزالة المنتج من السلة')
       console.log('تم إزالة المنتج من السلة')
@@ -415,6 +423,8 @@ const clearQty = async (e: Event) => {
   
   try {
     await cart.removeByProduct(props.product)
+    // Refresh cart to update counts and totals
+    await cart.list()
     emit('remove', props.product)
     showSuccess('تم إزالة المنتج من السلة')
     console.log('تم إزالة المنتج من السلة')
