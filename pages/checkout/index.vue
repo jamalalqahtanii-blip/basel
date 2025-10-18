@@ -56,7 +56,6 @@ const grandTotal = computed(() => {
 // Currency helper
 const cfg = useRuntimeConfig() as any
 const currencyCode = (cfg?.public?.currencyCode || 'SAR') as string
-const { locale } = useI18n() as any
 
 function money(n: any): string {
   const loc = locale?.value === 'ar' ? 'ar-SA' : 'en-US'
