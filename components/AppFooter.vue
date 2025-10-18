@@ -45,7 +45,7 @@
           <div class="link-section">
             <ul class="link-list">
               <li><NuxtLink to="/about" class="footer-link">{{ t('footer.links.company.about') }}</NuxtLink></li>
-              <li><NuxtLink to="/account?orders=true" class="footer-link">{{ t('footer.links.account.orders') }}</NuxtLink></li>
+              <li><span @click="handleOrdersClick" class="footer-link" style="cursor: pointer;">{{ t('footer.links.account.orders') }}</span></li>
             </ul>
           </div>
         </div>
@@ -63,14 +63,71 @@
       </div>
     </div>
   </footer>
+
+  <!-- Login Modal -->
+  <teleport to="body">
+    <div v-if="loginModalOpen" class="login-overlay" @click.self="closeLoginModal">
+      <div class="login-modal" dir="rtl">
+        <div class="login-header">
+          <h2>{{ t('login') || 'تسجيل الدخول' }}</h2>
+          <button class="close-btn" @click="closeLoginModal">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/></svg>
+          </button>
+        </div>
+        
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div class="form-group">
+            <label for="email">{{ t('email') || 'البريد الإلكتروني' }}</label>
+            <input 
+              id="email"
+              v-model="loginForm.email" 
+              type="email" 
+              :placeholder="t('email') || 'البريد الإلكتروني'"
+              required
+              :disabled="loginLoading"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="password">{{ t('password') || 'كلمة المرور' }}</label>
+            <input 
+              id="password"
+              v-model="loginForm.password" 
+              type="password" 
+              :placeholder="t('password') || 'كلمة المرور'"
+              required
+              :disabled="loginLoading"
+            />
+          </div>
+          
+          <div v-if="loginError" class="error-message">
+            {{ loginError }}
+          </div>
+          
+          <button type="submit" class="login-btn" :disabled="loginLoading">
+            <span v-if="loginLoading">{{ t('login.loading') || 'جاري تسجيل الدخول...' }}</span>
+            <span v-else>{{ t('login') || 'تسجيل الدخول' }}</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuth } from '../composables/useAuth'
 
 const { t } = useI18n()
+const auth = useAuth()
 const email = ref('')
+
+// Login modal state
+const loginModalOpen = ref(false)
+const loginForm = ref({ email: '', password: '' })
+const loginError = ref('')
+const loginLoading = ref(false)
 
 const subscribe = () => {
   if (email.value) {
@@ -79,6 +136,84 @@ const subscribe = () => {
     // You can add API call here
     email.value = ''
   }
+}
+
+const handleOrdersClick = () => {
+  if (auth.user.value) {
+    navigateTo('/account?orders=true')
+  } else {
+    // Open login modal
+    openLoginModal()
+  }
+}
+
+// Login functions
+async function handleLogin() {
+  if (!loginForm.value.email || !loginForm.value.password) {
+    loginError.value = t('login.required_fields') || 'جميع الحقول مطلوبة'
+    return
+  }
+  
+  loginLoading.value = true
+  loginError.value = ''
+  
+  try {
+    const response: any = await $fetch('/api/v1/auth/login', {
+      method: 'POST',
+      body: {
+        email_or_phone: loginForm.value.email,
+        password: loginForm.value.password,
+        type: 'email'
+      }
+    })
+    
+    // Handle different response formats
+    if (response?.access_token) {
+      auth.setToken(response.access_token)
+      // Try to get user info
+      try {
+        const userInfo: any = await $fetch('/api/v1/customer/info')
+        if (userInfo) auth.setUser(userInfo)
+      } catch (e) {
+        // If user info fails, still set token
+        auth.setUser(response.user || response.data)
+      }
+      loginModalOpen.value = false
+      loginForm.value = { email: '', password: '' }
+      // Navigate to orders page after successful login
+      navigateTo('/account?orders=true')
+    } else if (response?.token) {
+      auth.setToken(response.token)
+      auth.setUser(response.user || response.data)
+      loginModalOpen.value = false
+      loginForm.value = { email: '', password: '' }
+      // Navigate to orders page after successful login
+      navigateTo('/account?orders=true')
+    }
+  } catch (error: any) {
+    console.error('Login error:', error)
+    // Handle validation errors
+    if (error?.data?.errors && Array.isArray(error.data.errors)) {
+      const errorMessages = error.data.errors.map((err: any) => err.message).join(', ')
+      loginError.value = errorMessages
+    } else {
+      loginError.value = error?.data?.message || t('login.error') || 'خطأ في تسجيل الدخول'
+    }
+  } finally {
+    loginLoading.value = false
+  }
+}
+
+function openLoginModal() {
+  loginModalOpen.value = true
+  loginError.value = ''
+  loginForm.value = { email: '', password: '' }
+}
+
+function closeLoginModal() {
+  loginModalOpen.value = false
+  loginError.value = ''
+  loginForm.value = { email: '', password: '' }
 }
 </script>
 
@@ -418,5 +553,144 @@ const subscribe = () => {
 [dir="ltr"] .logo-go::after {
   right: auto;
   left: -15px;
+}
+
+/* Login Modal Styles */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.login-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.login-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input {
+  padding: 12px 15px;
+  border: 2px solid #e1e1e1;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+  background: #fff;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #f58040;
+}
+
+.form-group input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid #fcc;
+}
+
+.login-btn {
+  background: #f58040;
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #e67030;
+  transform: translateY(-1px);
+}
+
+.login-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* RTL Support for Modal */
+[dir="rtl"] .login-modal {
+  text-align: right;
+}
+
+[dir="ltr"] .login-modal {
+  text-align: left;
 }
 </style>
