@@ -1170,7 +1170,7 @@ async function handleRegisterSubmit() {
                 </clipPath>
                 </defs>
               </svg>
-              <span v-if="compareCount > 0" class="compare-badge badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">{{ compareCount }}</span>
+              <span v-if="compareCount >= 0" class="compare-badge badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">{{ compareCount }}</span>
             </NuxtLink>
             
             <!-- Cart -->
@@ -1376,7 +1376,7 @@ async function handleRegisterSubmit() {
               {{ t('login.success') || 'تم تسجيل الدخول بنجاح' }}
             </div>
             
-            <button type="submit" class="login-btn2" style="    width: 100%;background: #232323;color: #fff;padding: 10px;border-radius: 10px;" :disabled="loginLoading">
+            <button type="submit" class="login-btn2" style="    width: 100%;background:#f58040;color: #fff;padding: 10px;border-radius: 10px;" :disabled="loginLoading">
               <span v-if="loginLoading">{{ t('loading') || 'جاري التحميل...' }}</span>
               <span v-else>{{ t('login') || 'تسجيل الدخول' }}</span>
             </button>
