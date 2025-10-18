@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const cart = useCart()
 const auth = useAuth()
 const { $get, $post } = useApi()
@@ -17,12 +17,16 @@ const couponCode = ref('')
 const appliedCoupon = ref<any>(null)
 
 // Available payment methods
-const paymentMethods = computed(() => [
-  { id: 'cash_on_delivery', name: t('checkout.payment_methods.cash_on_delivery') || 'الدفع عند الاستلام', icon: '💰', available: true },
-  { id: 'wallet', name: t('checkout.payment_methods.wallet') || 'المحفظة الرقمية', icon: '💳', available: true },
-  { id: 'card', name: t('checkout.payment_methods.card') || 'بطاقة ائتمان', icon: '💳', available: true },
-  { id: 'bank_transfer', name: t('checkout.payment_methods.bank_transfer') || 'تحويل بنكي', icon: '🏦', available: true }
-])
+const paymentMethods = computed(() => {
+  const methods = [
+    { id: 'cash_on_delivery', name: t('checkout.payment_methods.cash_on_delivery'), icon: '💰', available: true },
+    { id: 'wallet', name: t('checkout.payment_methods.wallet'), icon: '💳', available: true },
+    { id: 'card', name: t('checkout.payment_methods.card'), icon: '💳', available: true },
+    { id: 'bank_transfer', name: t('checkout.payment_methods.bank_transfer'), icon: '🏦', available: true }
+  ]
+  console.log('Payment methods translations:', methods.map(m => ({ id: m.id, name: m.name, locale: locale.value })))
+  return methods
+})
 
 // Addresses
 const addresses = ref<any[]>([])
