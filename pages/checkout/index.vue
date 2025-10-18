@@ -18,21 +18,33 @@ const appliedCoupon = ref<any>(null)
 
 // Available payment methods
 const paymentMethods = computed(() => {
-  console.log('Current locale:', locale.value)
-  console.log('Translation exists check:', {
-    cash_on_delivery: te('checkout.payment_methods.cash_on_delivery'),
-    wallet: te('checkout.payment_methods.wallet'),
-    card: te('checkout.payment_methods.card'),
-    bank_transfer: te('checkout.payment_methods.bank_transfer')
-  })
+  // Define translations directly to ensure they work
+  const translations = {
+    ar: {
+      cash_on_delivery: 'الدفع عند الاستلام',
+      wallet: 'المحفظة الرقمية',
+      card: 'بطاقة ائتمان',
+      bank_transfer: 'تحويل بنكي'
+    },
+    en: {
+      cash_on_delivery: 'Cash on Delivery',
+      wallet: 'Digital Wallet',
+      card: 'Credit Card',
+      bank_transfer: 'Bank Transfer'
+    }
+  }
+  
+  const currentLocale = locale.value || 'ar'
+  const localeTranslations = translations[currentLocale as keyof typeof translations] || translations.ar
   
   const methods = [
-    { id: 'cash_on_delivery', name: t('checkout.payment_methods.cash_on_delivery') || 'الدفع عند الاستلام', icon: '💰', available: true },
-    { id: 'wallet', name: t('checkout.payment_methods.wallet') || 'المحفظة الرقمية', icon: '💳', available: true },
-    { id: 'card', name: t('checkout.payment_methods.card') || 'بطاقة ائتمان', icon: '💳', available: true },
-    { id: 'bank_transfer', name: t('checkout.payment_methods.bank_transfer') || 'تحويل بنكي', icon: '🏦', available: true }
+    { id: 'cash_on_delivery', name: localeTranslations.cash_on_delivery, icon: '💰', available: true },
+    { id: 'wallet', name: localeTranslations.wallet, icon: '💳', available: true },
+    { id: 'card', name: localeTranslations.card, icon: '💳', available: true },
+    { id: 'bank_transfer', name: localeTranslations.bank_transfer, icon: '🏦', available: true }
   ]
-  console.log('Payment methods translations:', methods.map(m => ({ id: m.id, name: m.name, locale: locale.value })))
+  
+  console.log('Payment methods (direct translations):', methods.map(m => ({ id: m.id, name: m.name, locale: currentLocale })))
   return methods
 })
 
