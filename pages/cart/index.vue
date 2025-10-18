@@ -4,6 +4,19 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const cart = useCart()
+
+// Success message state
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
+
+// Show success message function
+const showSuccess = (message: string) => {
+  successMessage.value = message
+  showSuccessMessage.value = true
+  setTimeout(() => {
+    showSuccessMessage.value = false
+  }, 3000) // Hide after 3 seconds
+}
 onMounted(async () => {
   console.log('=== CART PAGE MOUNTED ===')
   console.log('cart object:', cart)
@@ -255,6 +268,9 @@ async function inc(item: any) {
   actionBusy.value[idStr] = true
   try {
     await cart.update({ key: Number(key), quantity: qty })
+    // Refresh cart to update counts and totals
+    await cart.list()
+    showSuccess(`تم تحديث الكمية إلى ${qty}`)
   } finally {
     delete actionBusy.value[idStr]
   }
@@ -266,8 +282,17 @@ async function dec(item: any) {
   const idStr = String(item?.id ?? key)
   actionBusy.value[idStr] = true
   try {
-    if (qty > 1) await cart.update({ key: Number(key), quantity: qty - 1 })
-    else await cart.remove(Number(key))
+    if (qty > 1) {
+      await cart.update({ key: Number(key), quantity: qty - 1 })
+      // Refresh cart to update counts and totals
+      await cart.list()
+      showSuccess(`تم تحديث الكمية إلى ${qty - 1}`)
+    } else {
+      await cart.remove(Number(key))
+      // Refresh cart to update counts and totals
+      await cart.list()
+      showSuccess('تم إزالة المنتج من السلة')
+    }
   } finally {
     delete actionBusy.value[idStr]
   }
@@ -277,6 +302,9 @@ async function onClearAll() {
   clearAllBusy.value = true
   try {
     await cart.clearAll()
+    // Refresh cart to update counts and totals
+    await cart.list()
+    showSuccess('تم حذف جميع المنتجات من السلة')
   } finally {
     clearAllBusy.value = false
   }
@@ -822,6 +850,18 @@ function hasDiscount(it: any): boolean {
   </template>
   </div>
   </main>
+
+  <!-- Success Message -->
+  <teleport to="body">
+    <div v-if="showSuccessMessage" class="success-toast">
+      <div class="success-content">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        <span>{{ successMessage }}</span>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <style scoped>
@@ -1744,5 +1784,53 @@ function hasDiscount(it: any): boolean {
   .form-control {
     width: 100%;
   }
+}
+
+/* Success Toast Styles */
+.success-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.success-content {
+  background: #10b981;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.success-content svg {
+  flex-shrink: 0;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* RTL Support */
+[dir="rtl"] .success-toast {
+  right: auto;
+  left: 20px;
+}
+
+[dir="rtl"] .success-content {
+  text-align: right;
 }
 </style>
