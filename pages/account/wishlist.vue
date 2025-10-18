@@ -30,6 +30,19 @@ const wishlist = ref<WishlistItem[]>([])
 const loading = ref(false)
 const error = ref('')
 
+// Success message state
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
+
+// Show success message function
+const showSuccess = (message: string) => {
+  successMessage.value = message
+  showSuccessMessage.value = true
+  setTimeout(() => {
+    showSuccessMessage.value = false
+  }, 3000) // Hide after 3 seconds
+}
+
 // Load wishlist
 const loadWishlist = async () => {
   loading.value = true
@@ -69,10 +82,16 @@ const addToCart = async (product: any) => {
       quantity: 1
     })
     
-    // Show success message or handle cart update
+    // Refresh cart to update counts and totals
+    const cart = useCart()
+    await cart.list()
+    
+    // Show success message
+    showSuccess(`تم إضافة ${product.name} للسلة بنجاح!`)
     console.log('Added to cart:', product.name)
   } catch (err: any) {
     console.error('Error adding to cart:', err)
+    showSuccess('حدث خطأ في إضافة المنتج للسلة')
   }
 }
 
@@ -202,6 +221,18 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- Success Message -->
+  <teleport to="body">
+    <div v-if="showSuccessMessage" class="success-toast">
+      <div class="success-content">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        <span>{{ successMessage }}</span>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <style scoped>
@@ -532,5 +563,53 @@ onMounted(() => {
   .view-btn {
     width: 100%;
   }
+}
+
+/* Success Toast Styles */
+.success-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.success-content {
+  background: #10b981;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.success-content svg {
+  flex-shrink: 0;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* RTL Support */
+[dir="rtl"] .success-toast {
+  right: auto;
+  left: 20px;
+}
+
+[dir="rtl"] .success-content {
+  text-align: right;
 }
 </style>
