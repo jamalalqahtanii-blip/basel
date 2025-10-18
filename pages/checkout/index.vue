@@ -17,7 +17,7 @@ const couponCode = ref('')
 const appliedCoupon = ref<any>(null)
 
 // Available payment methods
-const paymentMethods = ref([
+const paymentMethods = computed(() => [
   { id: 'cash_on_delivery', name: t('checkout.payment_methods.cash_on_delivery') || 'الدفع عند الاستلام', icon: '💰', available: true },
   { id: 'wallet', name: t('checkout.payment_methods.wallet') || 'المحفظة الرقمية', icon: '💳', available: true },
   { id: 'card', name: t('checkout.payment_methods.card') || 'بطاقة ائتمان', icon: '💳', available: true },
@@ -1247,6 +1247,7 @@ onMounted(async () => {
   .address-card,
   .payment-method {
     padding: 16px;
+    flex-direction: column;
   }
   
   .coupon-input-group {
